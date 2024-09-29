@@ -1,9 +1,10 @@
+from datetime import datetime, timedelta, time
 from enum import Enum
+from uuid import UUID
 
-from fastapi import FastAPI, Query, Path, Body
+from fastapi import FastAPI, Query, Path, Body, Cookie, Header
 from pydantic import BaseModel, Field, HttpUrl
 from typing_extensions import Optional
-
 
 app = FastAPI()
 
@@ -226,50 +227,142 @@ Part 9 Body - Nested Models
 """
 
 
-class Image(BaseModel):
-    url: HttpUrl
-    name: str
+# class Image(BaseModel):
+#     url: HttpUrl
+#     name: str
+#
+#
+# class Item(BaseModel):
+#     name: str
+#     description: str | None = Field(
+#         default=None, title="The description of the item", max_length=300,
+#     )
+#     price: float = Field(..., gt=0, description="The price must be greater than zero")
+#     tax: float | None = None
+#     tags: set[str] = set()
+#     image: list[Image] | None = None
+#
+#
+# class Offer(BaseModel):
+#     name: str
+#     description: str | None = None
+#     price: float
+#     items: list[Item]
+#
+#
+# @app.put("/items/{item_id}")
+# def update_item(
+#         *,
+#         item_id: int = Path(..., title="The ID of the item to get", ge=0, le=1000),
+#         q: str | None = None,
+#         item: Item = Body(..., embed=True),
+#
+# ):
+#     results = {"item_id": item_id}
+#     if q:
+#         results.update({"q": q})
+#     if item:
+#         results.update({"item": item})
+#     return results
+#
+#
+# @app.post("/offers")
+# def create_offer(offer: Offer = Body(..., embed=True)):
+#     return offer
+#
+#
+# @app.post("/images/multiple")
+# def create_multiple_images(images: list[Image] = Body(..., embed=True)):
+#     return images
 
 
-class Item(BaseModel):
-    name: str
-    description: str | None = Field(
-        default=None, title="The description of the item", max_length=300,
-    )
-    price: float = Field(..., gt=0, description="The price must be greater than zero")
-    tax: float | None = None
-    tags: set[str] = set()
-    image: list[Image] | None = None
+"""
+Part 10 Body - Extra Data Types
+"""
+
+# class Image(BaseModel):
+#     url: HttpUrl
+#     name: str
+#
+#
+# class Item(BaseModel):
+#     name: str
+#     description: str | None = Field(
+#         default=None, title="The description of the item", max_length=300,
+#     )
+#     price: float = Field(..., gt=0, description="The price must be greater than zero")
+#     tax: float | None = None
+#     tags: set[str] = set()
+#     image: list[Image] | None = None
+#
+#     class Config:
+#         schema_extra = {
+#             "example": {
+#                 "name": "Foo",
+#                 "description": "A very nice Item",
+#                 "price": 35.4,
+#                 "tax": 3.2,
+#             }
+#         }
+#
+#
+# @app.put("/items/{item_id}")
+# def update_item(
+#         *,
+#         item_id: int = Path(..., title="The ID of the item to get", ge=0, le=1000),
+#         q: str | None = None,
+#         item: Item = Body(..., embed=True),
+#
+# ):
+#     results = {"item_id": item_id}
+#     if q:
+#         results.update({"q": q})
+#     if item:
+#         results.update({"item": item})
+#     return results
 
 
-class Offer(BaseModel):
-    name: str
-    description: str | None = None
-    price: float
-    items: list[Item]
+"""
+Part 11 - Extra Data Types
+"""
+
+#
+# @app.put("/items/{item_id}")
+# def read_items(
+#         item_id: UUID,
+#         start_date: datetime | None = Body(None),
+#         end_date: datetime | None = Body(None),
+#         repeat_at: time | None = Body(None),
+#         process_after: timedelta | None = Body(None),
+# ):
+#     start_process = start_date + process_after
+#     duration = end_date - start_process
+#     return {
+#         "item_id": item_id,
+#         "start_date": start_date,
+#         "end_date": end_date,
+#         "repeat_at": repeat_at,
+#         "process_after": process_after,
+#         "start_process": start_process,
+#         "duration": duration
+#     }
 
 
-@app.put("/items/{item_id}")
-def update_item(
-        *,
-        item_id: int = Path(..., title="The ID of the item to get", ge=0, le=1000),
-        q: str | None = None,
-        item: Item = Body(..., embed=True),
+"""
+Part 13 - Cookie and Header Parameters
+"""
 
+
+@app.get("/items")
+def read_items(
+        cookie_id: str | None = Cookie(None),
+        accept_encoding: str | None = Header(None),
+        header_id: str | None = Header(None),
+        x_token: list[str] | None = Header(None),
 ):
-    results = {"item_id": item_id}
-    if q:
-        results.update({"q": q})
-    if item:
-        results.update({"item": item})
-    return results
-
-
-@app.post("/offers")
-def create_offer(offer: Offer = Body(..., embed=True)):
-    return offer
-
-
-@app.post("/images/multiple")
-def create_multiple_images(images: list[Image] = Body(..., embed=True)):
-    return images
+    return {
+        "cookie_id": cookie_id,
+        "accept_encoding": accept_encoding,
+        "header_id": header_id,
+        "x_token": x_token
+    }
