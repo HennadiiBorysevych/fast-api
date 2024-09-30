@@ -3,7 +3,7 @@ from enum import Enum
 from uuid import UUID
 
 from fastapi import FastAPI, Query, Path, Body, Cookie, Header
-from pydantic import BaseModel, Field, HttpUrl
+from pydantic import BaseModel, Field, HttpUrl, EmailStr
 from typing_extensions import Optional
 
 app = FastAPI()
@@ -349,20 +349,104 @@ Part 11 - Extra Data Types
 
 
 """
-Part 13 - Cookie and Header Parameters
+Part 12 - Cookie and Header Parameters
 """
 
 
-@app.get("/items")
-def read_items(
-        cookie_id: str | None = Cookie(None),
-        accept_encoding: str | None = Header(None),
-        header_id: str | None = Header(None),
-        x_token: list[str] | None = Header(None),
-):
-    return {
-        "cookie_id": cookie_id,
-        "accept_encoding": accept_encoding,
-        "header_id": header_id,
-        "x_token": x_token
-    }
+# @app.get("/items")
+# def read_items(
+#         cookie_id: str | None = Cookie(None),
+#         accept_encoding: str | None = Header(None),
+#         header_id: str | None = Header(None),
+#         x_token: list[str] | None = Header(None),
+# ):
+#     return {
+#         "cookie_id": cookie_id,
+#         "accept_encoding": accept_encoding,
+#         "header_id": header_id,
+#         "x_token": x_token
+#     }
+
+
+"""
+Part 13 - Response Model
+"""
+
+
+class Image(BaseModel):
+    url: HttpUrl
+    name: str
+
+
+class Item(BaseModel):
+    name: str
+    description: str | None = Field(
+        default=None, title="The description of the item", max_length=300,
+    )
+    price: float = Field(..., gt=0, description="The price must be greater than zero")
+    tax: float | None = None
+    tags: set[str] = set()
+    image: list[Image] | None = None
+
+
+@app.post(
+    "/items",
+    response_model=Item,
+    summary="Create an item",
+    response_description="The created item",
+)
+def create_item(item: Item):
+    return item
+
+
+class User(BaseModel):
+    username: str
+    email: EmailStr
+    full_name: str | None = None
+
+
+class UserInDB(User):
+    password: str
+
+
+class UserOut(User):
+    pass
+
+
+@app.post("/user/", response_model=UserOut)
+def create_user(user: User):
+    return user
+
+
+class Item(BaseModel):
+    name: str
+    description: str | None = None
+    price: float
+    tax: float | None = None
+    tags: list[str] = []
+
+items = {
+    "foo": {"name": "Foo", "price": 50.2},
+    "bar": {"name": "Bar", "description": "The bartenders", "price": 62, "tax": 20.2},
+    "baz": {"name": "Baz", "description": None, "price": 50.2, "tax": 10.5, "tags": []},
+}
+
+
+@app.post("/items/", response_model=Item)
+def read_item(item_id: Item):
+    return items
+
+
+@app.get("/items/{item_id}",  response_model=Item, response_model_exclude_unset=True)
+def read_item_defaults(item_id: str):
+    return items[item_id]
+
+
+@app.get("/items/{item_id}/name", response_model=Item, response_model_include={"name", "description"})
+def read_item_name(item_id: str):
+    return items[item_id]
+
+
+@app.get("/items/{item_id}/public", response_model=Item, response_model_exclude={"tax"})
+def read_item_public_data(item_id: str):
+    return items[item_id]
